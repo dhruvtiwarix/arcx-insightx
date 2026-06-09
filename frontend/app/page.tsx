@@ -3,9 +3,37 @@
 import { useState } from "react";
 import UploadZone from "@/components/UploadZone";
 import DataTable from "@/components/DataTable";
+import StatsPanel from "@/components/StatsPanel";
 
 // This describes the shape of data coming back from your FastAPI
+
+type ColumnStat = {
+  name: string;
+  type: "numeric" | "categorical" | "datetime";
+  dtype: string;
+  total: number;
+  non_null: number;
+  null_count: number;
+  null_pct: number;
+  // numeric
+  mean?: number;
+  std?: number;
+  min?: number;
+  max?: number;
+  median?: number;
+  p25?: number;
+  p75?: number;
+  // categorical
+  distinct_count?: number;
+  most_common?: string;
+  most_common_pct?: number;
+  // datetime
+  min_date?: string;
+  max_date?: string;
+};
+
 type DatasetResponse = {
+  stats: ColumnStat[];
   filename: string;
   row_count: number;
   column_count: number;
@@ -67,15 +95,28 @@ export default function Home() {
 
         {/* Dataset info + table — only visible after upload */}
         {dataset && (
-          <div className="mt-8">
-            <div className="mb-4 flex gap-6 text-sm text-gray-600">
-              <span>📄 {dataset.filename}</span>
-              <span>🔢 {dataset.row_count.toLocaleString()} rows</span>
-              <span>📊 {dataset.column_count} columns</span>
-            </div>
-            <DataTable columns={dataset.columns} rows={dataset.rows} />
-          </div>
-        )}
+  <div className="mt-8 space-y-8">
+    
+    {/* File summary */}
+    <div className="flex gap-6 text-sm text-gray-600">
+      <span>📄 {dataset.filename}</span>
+      <span>🔢 {dataset.row_count.toLocaleString()} rows</span>
+      <span>📊 {dataset.column_count} columns</span>
+    </div>
+
+    {/* Column statistics — the new feature */}
+    <StatsPanel stats={dataset.stats} />
+
+    {/* Data table */}
+    <div>
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        Data Preview
+      </h2>
+      <DataTable columns={dataset.columns} rows={dataset.rows} />
+    </div>
+
+  </div>
+)}
 
       </div>
     </main>

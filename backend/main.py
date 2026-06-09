@@ -4,6 +4,8 @@ import pandas as pd
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from profiler import profile_dataframe   # ← add this import
+
 app = FastAPI(title="ARCX InsightX API", version="0.1.0")
 
 app.add_middleware(
@@ -30,6 +32,14 @@ async def upload_file(file: UploadFile = File(...)):
     else:
         return {"error": "Only CSV and XLSX files are supported"}
 
+    # Parse dates automatically — important for datetime column detection
+    df = df.infer_objects()
+    for col in df.select_dtypes(include="object").columns:
+        try:
+            df[col] = pd.to_datetime(df[col])
+        except (ValueError, TypeError):
+            pass  # not a date column, leave as string
+
     return {
         "filename": file.filename,
         "row_count": len(df),
@@ -37,4 +47,5 @@ async def upload_file(file: UploadFile = File(...)):
         "columns": list(df.columns),
         "dtypes": df.dtypes.astype(str).to_dict(),
         "rows": df.head(100).to_dict(orient="records"),
+        "stats": profile_dataframe(df),   # ← new
     }
